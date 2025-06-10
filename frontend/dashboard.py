@@ -1,3 +1,5 @@
+
+from pathlib import Path
 from shiny import App, render, ui, reactive
 import requests
 import json
@@ -41,12 +43,12 @@ def clean_text(text):
     text = re.sub(r"\s+", " ", text).strip()
     return text
 
-def fetch_data(query, result_size):
+def fetch_data(query, result_size=20):
     """Fetch data from Amplyfi API"""
     payload = {
         "query_text": query,
         "result_size": result_size,
-        "include_highlights": True
+        "include_highlights": True,
     }
     
     try:
@@ -54,41 +56,129 @@ def fetch_data(query, result_size):
         return response.json()
     except Exception as e:
         return {"results": [], "error": str(e)}
+    
+def generate_wordcloud(text_data):
+    """Generate word cloud from text data"""
+    if not text_data:
+        return None
+    
+    # Combine all text
+    combined_text = " ".join(text_data)
+    
+    if not combined_text.strip():
+        return None
+    
+    # Generate word cloud
+    wordcloud = WordCloud(
+        width=400, 
+        height=300, 
+        background_color='white',
+        colormap='viridis',
+        max_words=50
+    ).generate(combined_text)
+    
+    # Convert to base64 for display
+    img = io.BytesIO()
+    plt.figure(figsize=(8, 6))
+    plt.imshow(wordcloud, interpolation='bilinear')
+    plt.axis('off')
+    plt.tight_layout(pad=0)
+    plt.savefig(img, format='png', bbox_inches='tight', dpi=100)
+    plt.close()
+    
+    img.seek(0)
+    img_b64 = base64.b64encode(img.read()).decode()
+    return f"data:image/png;base64,{img_b64}"
 
+def create_sentiment_plot(df):
+    """Create sentiment over time plot"""
+    if df.empty:
+        return go.Figure()
+    
+    # Sort by date if available, otherwise use index
+    if 'published_date' in df.columns:
+        df_sorted = df.sort_values('published_date')
+        x_axis = df_sorted['published_date']
+        x_title = "Publication Date"
+    else:
+        df_sorted = df.reset_index()
+        x_axis = df_sorted.index
+        x_title = "Article Index"
+    
+    fig = go.Figure()
+    
+    # Add sentiment line
+    fig.add_trace(go.Scatter(
+        x=x_axis,
+        y=df_sorted['sent_compound'],
+        mode='lines+markers',
+        name='Sentiment Score',
+        line=dict(color='#2E86AB', width=3),
+        marker=dict(size=6)
+    ))
+    
+    # Add neutral line
+    fig.add_hline(y=0, line_dash="dash", line_color="gray", opacity=0.5)
+    
+    fig.update_layout(
+        title="Sentiment Analysis Over Time",
+        xaxis_title=x_title,
+        yaxis_title="Sentiment Score",
+        height=400,
+        showlegend=False,
+        template="plotly_white"
+    )
+    
+    return fig
 
+app_ui = ui.page_fixed(
+    ui.tags.link(href="style.css", rel="stylesheet"),
 
-# UI Definition
-app_ui = ui.page_fluid(
-    # Search Input
-    ui.include_css("style.css"),
+    # Navbar
     ui.div(
-        class_="navbar",
+        ui.div(
+            ui.img(src="star.png", alt="Star Logo", class_="star-icon"),
+            "Seren",
+            class_="navbar-brand"
+        ),
+        class_="navbar-custom"
     ),
-    ui.row(
-            ui.input_text("search_query", label=None, placeholder="What are you looking for today?"),
-            ui.input_action_button("search_btn", "Search",)
+    
+    # Search
+    ui.div(
+        ui.div(
+            ui.div(
+                ui.input_text(
+                    "search_query", 
+                    label=None,
+                    placeholder="What are you looking at today?",
+                    width="100%"
+                ),
+                ui.input_action_button("search_btn", "🔍", class_="search-btn"),
+                class_="search-wrapper"
+            ),
+            class_="container"
+        ),
+        class_="search-container"
     ),
     
     # Main Dashboard Layout
     ui.row(
         ui.column(6,
-            ui.br(),
-            # Article List
-            ui.card(
-                ui.card_header("Top Articles"),
-                ui.div(
-                    ui.output_ui("articles_list")
-                )
-            ),
-            # WordCloud
             ui.card(
                 ui.card_header("Word Cloud"),
                 ui.output_ui("wordcloud_output"),
-                height="350px"
+            ),
+            ui.br(),
+            ui.card(
+                ui.card_header("Top Articles"),
+                ui.div(
+                    ui.output_ui("articles_list"),
+                    style="height: 400px; overflow-y: auto;"
+                )
             )
         ),
         
-        # Right Column - Sentiment Graph
         ui.column(6,
             ui.card(
                 ui.card_header("Sentiment Analysis"),
@@ -98,7 +188,6 @@ app_ui = ui.page_fluid(
         )
     )
 )
-
 
 # Server Logic
 def server(input, output, session):
@@ -118,7 +207,7 @@ def server(input, output, session):
         ui.notification_show(f"Searching for '{query}'...", type="message")
         
         # Fetch data
-        json_response = fetch_data(query, 5)
+        json_response = fetch_data(query, result_size=15)
         
         if "error" in json_response:
             ui.notification_show(f"Error: {json_response['error']}", type="error")
@@ -142,6 +231,23 @@ def server(input, output, session):
         current_data.set(df)
         
         ui.notification_show(f"Found {len(df)} articles", type="success")
+    
+    @output
+    @render.ui
+    def wordcloud_output():
+        """Render word cloud"""
+        df = current_data()
+        if df.empty:
+            return ui.div("Search for articles to generate word cloud", class_="text-center mt-5")
+        
+        # Generate word cloud from clean summaries
+        clean_texts = df['clean_summary'].tolist()
+        wordcloud_img = generate_wordcloud(clean_texts)
+        
+        if wordcloud_img:
+            return ui.img(src=wordcloud_img, style="width: 100%; height: auto;")
+        else:
+            return ui.div("No text data available for word cloud", class_="text-center mt-5")
     
     @output
     @render.ui
@@ -170,9 +276,23 @@ def server(input, output, session):
             articles_html.append(article_card)
         
         return ui.div(*articles_html)
+    
+    @output
+    @render.ui
+    def sentiment_plot():
+        """Render sentiment plot"""
+        df = current_data()
+        if df.empty:
+            return ui.div("Search for articles to see sentiment analysis", class_="text-center mt-5")
+        
+        fig = create_sentiment_plot(df)
+        
+        # Convert plotly figure to HTML
+        plot_html = fig.to_html(include_plotlyjs='cdn', div_id="sentiment-plot")
+        return ui.HTML(plot_html)
 
-# Create the app
-app = App(app_ui, server)
+app_dir = Path(__file__).parent
+app = App(app_ui, server, static_assets=app_dir / "www")
 
 if __name__ == "__main__":
     app.run()

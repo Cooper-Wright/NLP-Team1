@@ -1,15 +1,20 @@
  @font-face {
     font-family: 'Roboto Flex';
-    src: url('app/static/fonts/Roboto_Flex/RobotoFlex-VariableFont_GRAD,XOPQ,XTRA,YOPQ,YTAS,YTDE,YTFI,YTLC,YTUC,opsz,slnt,wdth,wght.ttf') format('truetype');
+    src: url('fonts/Roboto_Flex/RobotoFlex-VariableFont_GRAD,XOPQ,XTRA,YOPQ,YTAS,YTDE,YTFI,YTLC,YTUC,opsz,slnt,wdth,wght.ttf') format('truetype');
 }
 
  @font-face {
     font-family: 'Montserrat';
-    src: url('app/static/fonts/Montserrat/Montserrat-VariableFont_wght.ttf') format('truetype');
+    src: url('fonts/Montserrat/Montserrat-VariableFont_wght.ttf') format('truetype');
 }
 
-body {
+.container {
     font-family: 'Roboto Flex', 'sans-serif';
+    background-color: #FAFAFA;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    max-width: 100%;
 }
 
 .navbar-custom {
@@ -34,10 +39,14 @@ body {
     border-radius: 4px;
 }
 
+.row {
+    padding: 3vw;
+}
+
 .search-container {
     background-color: #F8F9FA;
-    padding: 40px 0;
-    margin-bottom: 30px;
+    margin-top: 5vh;
+    margin-bottom: 1vh;
 }
 
 .search-wrapper {
@@ -78,72 +87,16 @@ body {
     color: white;
 }
 
-body {
-    background-color: #FAFAFA;
+.content {
+    display: grid;
+    grid-template-columns: 2;
+    gap: 1vw
 }
 
-/* Dashboard Cards */
-.card {
-    border: none;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    border-radius: 8px;
+.sentiment-analysis {
+    grid-row-start: 1;
+    grid-row-end: 3;
 }
-
-.card-header {
-    background-color: #F4A698;
-    color: #2A2A2A;
-    font-weight: bold;
-    border-bottom: none;
-}
-
-/* Article Cards */
-.article-card {
-    border: 1px solid #e9ecef;
-    border-radius: 8px;
-    padding: 15px;
-    margin-bottom: 15px;
-    background-color: white;
-    transition: box-shadow 0.2s ease;
-}
-
-.article-card:hover {
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-
-.article-title {
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin-bottom: 8px;
-    color: #2A2A2A;
-}
-
-.article-summary {
-    color: #666;
-    margin-bottom: 10px;
-    line-height: 1.4;
-}
-
-.sentiment-badge {
-    font-size: 0.8rem;
-    padding: 4px 8px;
-    border-radius: 12px;
-}
-
-.sentiment-positive {
-    background-color: #d4edda;
-    color: #73a580;
-}
-
-.sentiment-negative {
-    background-color: #f8d7da;
-    color: #dd614a;
-}
-
-.sentiment-neutral {
-    background-color: #fff3cd;
-    color: #856404;
-}
-
 /*
 
 .navbar {
