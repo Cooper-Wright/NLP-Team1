@@ -51,10 +51,44 @@ def fetch_data(query, result_size):
     
     try:
         response = requests.post(API_URL, headers=headers, data=json.dumps(payload))
-        print(response.json())
-        return response.json()
+        json_response = response.json()
+
+        while json_response.get("message") == "Endpoint request timed out":
+            json_response = requests.post(API_URL, headers=headers, data=json.dumps(payload))
+
+        print(json_response)
+        write_to_excel(json_response, payload)
+        return json_response
     except Exception as e:
         return {"results": [], "error": str(e)}
+    
+def write_to_excel(json_response, payload):
+    # Create a better Excel file with multiple sheets
+    with pd.ExcelWriter("data.xlsx") as writer:
+        # Extract the results list into a DataFrame
+        if 'results' in json_response:
+            results_df = pd.json_normalize(json_response['results'])
+            results_df.to_excel(writer, sheet_name="Reviews", index=False)
+            
+        # Save query details to another sheet
+        if 'query_details' in json_response:
+            query_df = pd.json_normalize(json_response['query_details'])
+            query_df.to_excel(writer, sheet_name="Query Details", index=False)
+        
+        # Save AI answer if available
+        if 'ai_answer' in json_response:
+            ai_answer_df = pd.json_normalize(json_response['ai_answer'])
+            ai_answer_df.to_excel(writer, sheet_name="AI Answer", index=False)
+        
+        # Save metadata
+        metadata = {
+            "count": json_response.get('count', 0),
+            "total_results": len(json_response.get('results', [])),
+            "query": payload["query_text"]
+        }
+        pd.DataFrame([metadata]).to_excel(writer, sheet_name="Metadata", index=False)
+
+    print(f"JSON response saved to data.xlsx with multiple sheets")
 
 def generate_wordcloud(text_data):
     """Generate word cloud from text data"""

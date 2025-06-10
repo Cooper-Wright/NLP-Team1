@@ -1,0 +1,43 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Virtual environments
+env/
+venv/
+ENV/
+.env/
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Data files
+*.xlsx
+*.xls
+*.csv
+*.db
+*.sqlite
+
+# Logs
+logs/
+*.log
+
+# Secrets / API keys
+secrets.py
+
+# OS specific files
+.DS_Store
+Thumbs.db
