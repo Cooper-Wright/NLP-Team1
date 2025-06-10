@@ -22,7 +22,7 @@ headers = {
 # Edit the below to get different data
 payload = {
   "query_text": "What are the current reviews on the release of the Nintendo switch?",
-  "result_size": 10,
+  "result_size": 100,
   "include_highlights":True,
   "ai_answer": "basic"
 }
