@@ -44,7 +44,7 @@ def clean_text(text):
 def fetch_data(query, result_size=20):
     """Fetch data from Amplyfi API"""
     payload = {
-        "query_text": query,
+        "query_text": "Articles with the words 'reviews' or 'rating' or 'experiences' " + query + " in the Title", #What are the latest and most unbiased reviews or ratings or experiences on the " + query + ". Please ensure the articles are solely on the " + query + ".
         "result_size": result_size,
         "include_highlights": True,
         "ai_answer": "basic"
@@ -52,9 +52,69 @@ def fetch_data(query, result_size=20):
     
     try:
         response = requests.post(API_URL, headers=headers, data=json.dumps(payload))
+<<<<<<< HEAD:frontend/dashboard_test.py
         return response.json()
+=======
+        json_response = response.json()
+
+        while json_response.get("message") == "Endpoint request timed out":
+            json_response = requests.post(API_URL, headers=headers, data=json.dumps(payload))
+
+        print(json_response)
+        write_to_excel(json_response, payload)
+        return json_response
+>>>>>>> 361fdd72517171caf95ab028874b48155ffa9450:dashboard_test.py
     except Exception as e:
         return {"results": [], "error": str(e)}
+    
+def write_to_excel(json_response, payload):
+    df = find_sentimental_value(json_response)
+
+    # Create a better Excel file with multiple sheets
+    with pd.ExcelWriter("data.xlsx") as writer:
+        # Extract the results list into a DataFrame
+        if 'results' in json_response:
+            results_df = pd.json_normalize(json_response['results'])
+
+            # Add sentiment columns from the df dataframe
+            results_df['sent_compound'] = df['sent_compound']
+            results_df['sent_pos'] = df['sent_pos']
+            results_df['sent_neg'] = df['sent_neg']
+            
+            results_df.to_excel(writer, sheet_name="Reviews", index=False)
+            
+        # Save query details to another sheet
+        if 'query_details' in json_response:
+            query_df = pd.json_normalize(json_response['query_details'])
+            query_df.to_excel(writer, sheet_name="Query Details", index=False)
+        
+        # Save AI answer if available
+        if 'ai_answer' in json_response:
+            ai_answer_df = pd.json_normalize(json_response['ai_answer'])
+            ai_answer_df.to_excel(writer, sheet_name="AI Answer", index=False)
+        
+        # Save metadata
+        metadata = {
+            "count": json_response.get('count', 0),
+            "total_results": len(json_response.get('results', [])),
+            "query": payload["query_text"]
+        }
+        pd.DataFrame([metadata]).to_excel(writer, sheet_name="Metadata", index=False)
+
+    print(f"JSON response saved to data.xlsx with multiple sheets")
+
+def find_sentimental_value(json_response):
+    # Process data
+    df = pd.json_normalize(json_response['results'])
+    
+    # Clean and analyze text
+    df['clean_summary'] = df['summary'].apply(clean_text)
+    df['sentiment'] = df['clean_summary'].apply(lambda x: sia.polarity_scores(x))
+    df['sent_compound'] = df['sentiment'].apply(lambda d: d['compound'])
+    df['sent_pos'] = df['sentiment'].apply(lambda d: d['pos'])
+    df['sent_neg'] = df['sentiment'].apply(lambda d: d['neg'])
+
+    return df
 
 def generate_wordcloud(text_data):
     """Generate word cloud from text data"""
@@ -132,6 +192,7 @@ def create_sentiment_plot(df):
 
 # UI Definition
 app_ui = ui.page_fluid(
+<<<<<<< HEAD:frontend/dashboard_test.py
     # Custom CSS for styling
     ui.include_css("style.css"),
 
@@ -142,6 +203,15 @@ app_ui = ui.page_fluid(
             ui.img(src="star.png", class_="star-icon"),
             "Seren",
             class_="navbar-brand"
+=======
+
+    ui.h1("Amplyfi News Dashboard", class_="text-center mb-4"),
+    
+    # Search Input
+    ui.row(
+        ui.column(8,
+            ui.input_text("search_query", "Search Query:", value="", placeholder="Enter the name of a product", width="100%")
+>>>>>>> 361fdd72517171caf95ab028874b48155ffa9450:dashboard_test.py
         ),
         class_="navbar-custom"
     ),
@@ -169,19 +239,33 @@ app_ui = ui.page_fluid(
     ui.row(
         # Left Column - WordCloud and Article List
         ui.column(6,
-            # WordCloud
-            ui.card(
-                ui.card_header("Word Cloud"),
-                ui.output_ui("wordcloud_output"),
-                height="350px"
-            ),
             ui.br(),
             # Article List
             ui.card(
                 ui.card_header("Top Articles"),
+                # Add sorting dropdown here
+                ui.input_select(
+                    "sort_by", 
+                    "Sort Articles By:", 
+                    {
+                        "sent_compound_desc": "Most Positive First",
+                        "sent_compound_asc": "Most Negative First", 
+                        "title": "Title (A-Z)",
+                        "timestamp": "Date (if available)",
+                        "score": "Relevance Score"
+                    },
+                    selected="sent_compound_desc",
+                    width="100%"
+                ),
                 ui.div(
                     ui.output_ui("articles_list"),
                     style="height: 400px; overflow-y: auto;"
+                ),
+
+                ui.download_button(
+                "download_basic", 
+                "Full Excel Download", 
+                class_="btn btn-success"
                 )
             )
         ),
@@ -192,6 +276,13 @@ app_ui = ui.page_fluid(
                 ui.card_header("Sentiment Analysis"),
                 ui.output_ui("sentiment_plot"),
                 height="780px"
+            ),
+
+            # WordCloud
+            ui.card(
+                ui.card_header("Word Cloud"),
+                ui.output_ui("wordcloud_output"),
+                height="500px"
             )
         )
     )
@@ -225,15 +316,7 @@ def server(input, output, session):
             ui.notification_show("No results found", type="warning")
             return
         
-        # Process data
-        df = pd.json_normalize(json_response['results'])
-        
-        # Clean and analyze text
-        df['clean_summary'] = df['summary'].apply(clean_text)
-        df['sentiment'] = df['clean_summary'].apply(lambda x: sia.polarity_scores(x))
-        df['sent_compound'] = df['sentiment'].apply(lambda d: d['compound'])
-        df['sent_pos'] = df['sentiment'].apply(lambda d: d['pos'])
-        df['sent_neg'] = df['sentiment'].apply(lambda d: d['neg'])
+        df = find_sentimental_value(json_response)
         
         # Store processed data
         current_data.set(df)
@@ -265,16 +348,56 @@ def server(input, output, session):
         if df.empty:
             return ui.div("Search for articles to see results", class_="text-center mt-3")
         
-        # Get top 3 articles by sentiment
-        top_articles = df.nlargest(3, 'sent_compound')
+        # Get sort option
+        sort_option = input.sort_by()
+        
+        # Apply sorting based on selection
+        if sort_option == "sent_compound_desc":
+            sorted_df = df.nlargest(100, 'sent_compound')
+        elif sort_option == "sent_compound_asc":
+            sorted_df = df.nsmallest(100, 'sent_compound')
+        elif sort_option == "title":
+            sorted_df = df.sort_values('title', key=lambda x: x.str.lower() if pd.api.types.is_string_dtype(x) else x)
+        elif sort_option == "timestamp" and "timestamp" in df.columns:
+            sorted_df = df.sort_values('timestamp', ascending=False)
+        elif sort_option == "score" and "score" in df.columns:
+            sorted_df = df.nlargest(100, 'score')
+        else:
+            # Default fallback
+            sorted_df = df.nlargest(100, 'sent_compound')
         
         articles_html = []
-        for idx, article in top_articles.iterrows():
+        for idx, article in sorted_df.iterrows():
             sentiment_color = "success" if article['sent_compound'] > 0.1 else "danger" if article['sent_compound'] < -0.1 else "warning"
             
+            # Get the title and truncate if needed
+            title_text = article.get('title', 'No Title')
+            if len(str(title_text)) > 100:
+                title_display = title_text[:100] + "..."
+            else:
+                title_display = title_text
+            
+            # Check for URL in different possible field names
+            article_url = None
+            for url_field in ['url', 'link', 'source_url', 'web_url']:
+                if url_field in article and isinstance(article[url_field], str):
+                    article_url = article[url_field]
+                    break
+            
+            # Create title element based on whether URL is available
+            if article_url:
+                title_element = ui.tags.a(
+                    title_display, 
+                    href=article_url,
+                    target="_blank",  # Open in new tab
+                    style="color: #2c3e50; text-decoration: none; font-weight: 600; font-size: 1.1rem;"
+                )
+            else:
+                title_element = ui.h6(title_display)
+                
             article_card = ui.div(
                 ui.div(
-                    ui.h6(article.get('title', 'No Title')[:100] + "..." if len(str(article.get('title', ''))) > 100 else article.get('title', 'No Title')),
+                    title_element,  # Use the dynamic title element
                     ui.p(article.get('summary', 'No Summary')[:200] + "..." if len(str(article.get('summary', ''))) > 200 else article.get('summary', 'No Summary')),
                     ui.span(f"Sentiment: {article['sent_compound']:.3f}", class_=f"badge bg-{sentiment_color}"),
                     class_="card-body"
@@ -284,6 +407,15 @@ def server(input, output, session):
             articles_html.append(article_card)
         
         return ui.div(*articles_html)
+
+    @session.download(filename="data.xlsx")
+    def download_basic():
+        file_path = "data.xlsx"
+        
+        # Read the file and return its contents
+        with open(file_path, "rb") as f:
+            return f.read()
+
     
     @output
     @render.ui
