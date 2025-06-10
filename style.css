@@ -1,0 +1,194 @@
+ @font-face {
+    font-family: 'Roboto Flex';
+    src: url('app/static/fonts/Roboto_Flex/RobotoFlex-VariableFont_GRAD,XOPQ,XTRA,YOPQ,YTAS,YTDE,YTFI,YTLC,YTUC,opsz,slnt,wdth,wght.ttf') format('truetype');
+}
+
+ @font-face {
+    font-family: 'Montserrat';
+    src: url('app/static/fonts/Montserrat/Montserrat-VariableFont_wght.ttf') format('truetype');
+}
+
+body {
+    font-family: 'Roboto Flex', 'sans-serif';
+}
+
+.navbar-custom {
+    background-color: #F4A698;
+    padding: 15px 20px;
+    margin-bottom: 0;
+}
+
+.navbar-brand {
+    color: #2A2A2A !important;
+    font-weight: bold;
+    font-size: 1.3rem;
+    font-family: 'Montserrat', 'sans-serif';
+    display: flex;
+    align-items: center;
+}
+
+.star-icon {
+    width: 24px;
+    height: 24px;
+    margin-right: 10px;
+    border-radius: 4px;
+}
+
+.search-container {
+    background-color: #F8F9FA;
+    padding: 40px 0;
+    margin-bottom: 30px;
+}
+
+.search-wrapper {
+    max-width: 600px;
+    margin: 0 auto;
+    position: relative;
+}
+
+.search-input {
+    border-radius: 25px !important;
+    border: 1px solid #ddd !important;
+    padding: 12px 50px 12px 20px !important;
+    font-size: 1rem !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+}
+
+.search-input:focus {
+    border-color: #F4A698 !important;
+    box-shadow: 0 0 0 0.2rem rgba(244, 166, 152, 0.25) !important;
+}
+
+.search-btn {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #666;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+}
+
+.search-btn:hover {
+    background-color: #F4A698;
+    color: white;
+}
+
+body {
+    background-color: #FAFAFA;
+}
+
+/* Dashboard Cards */
+.card {
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border-radius: 8px;
+}
+
+.card-header {
+    background-color: #F4A698;
+    color: #2A2A2A;
+    font-weight: bold;
+    border-bottom: none;
+}
+
+/* Article Cards */
+.article-card {
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    background-color: white;
+    transition: box-shadow 0.2s ease;
+}
+
+.article-card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.article-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #2A2A2A;
+}
+
+.article-summary {
+    color: #666;
+    margin-bottom: 10px;
+    line-height: 1.4;
+}
+
+.sentiment-badge {
+    font-size: 0.8rem;
+    padding: 4px 8px;
+    border-radius: 12px;
+}
+
+.sentiment-positive {
+    background-color: #d4edda;
+    color: #73a580;
+}
+
+.sentiment-negative {
+    background-color: #f8d7da;
+    color: #dd614a;
+}
+
+.sentiment-neutral {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+/*
+
+.navbar {
+    background-color: #F4A698;
+    height: 10vh;
+    width: 100vw;
+    padding: 0;
+    margin: 0;
+}
+
+.content {
+    display: flex;
+    justify-content: center;
+}
+
+#search_query {
+    height: 5vh;
+    width: 85vw;
+    margin-top: 5vh;
+    border-radius: 15px;
+    text-align: center;
+    font-size: 1rem;
+    outline-style: none;
+    font-family: 'Roboto Flex', sans-serif;
+}
+
+.form-group.shiny-input-container {
+    width:50000px;
+    display: flex;
+    justify-content: center;
+}
+
+.btn {
+    font-family: 'Roboto Flex', sans-serif;
+    background-color: #7F9EAE;
+    width: 5vw;
+}
+
+.btn:hover {
+    background-color: #6A8EA0;
+    outline-style: none;
+}
+
+.row {
+    display: flex;
+    justify-content: center;
+}
+ */
