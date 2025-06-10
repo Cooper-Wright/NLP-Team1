@@ -187,6 +187,7 @@ def create_sentiment_plot(df):
 
 # UI Definition
 app_ui = ui.page_fluid(
+
     ui.h1("Amplyfi News Dashboard", class_="text-center mb-4"),
     
     # Search Input
@@ -232,6 +233,12 @@ app_ui = ui.page_fluid(
                 ui.div(
                     ui.output_ui("articles_list"),
                     style="height: 400px; overflow-y: auto;"
+                ),
+
+                ui.download_button(
+                "download_basic", 
+                "Full Excel Download", 
+                class_="btn btn-success"
                 )
             )
         ),
@@ -329,9 +336,34 @@ def server(input, output, session):
         for idx, article in sorted_df.iterrows():
             sentiment_color = "success" if article['sent_compound'] > 0.1 else "danger" if article['sent_compound'] < -0.1 else "warning"
             
+            # Get the title and truncate if needed
+            title_text = article.get('title', 'No Title')
+            if len(str(title_text)) > 100:
+                title_display = title_text[:100] + "..."
+            else:
+                title_display = title_text
+            
+            # Check for URL in different possible field names
+            article_url = None
+            for url_field in ['url', 'link', 'source_url', 'web_url']:
+                if url_field in article and isinstance(article[url_field], str):
+                    article_url = article[url_field]
+                    break
+            
+            # Create title element based on whether URL is available
+            if article_url:
+                title_element = ui.tags.a(
+                    title_display, 
+                    href=article_url,
+                    target="_blank",  # Open in new tab
+                    style="color: #2c3e50; text-decoration: none; font-weight: 600; font-size: 1.1rem;"
+                )
+            else:
+                title_element = ui.h6(title_display)
+                
             article_card = ui.div(
                 ui.div(
-                    ui.h6(article.get('title', 'No Title')[:100] + "..." if len(str(article.get('title', ''))) > 100 else article.get('title', 'No Title')),
+                    title_element,  # Use the dynamic title element
                     ui.p(article.get('summary', 'No Summary')[:200] + "..." if len(str(article.get('summary', ''))) > 200 else article.get('summary', 'No Summary')),
                     ui.span(f"Sentiment: {article['sent_compound']:.3f}", class_=f"badge bg-{sentiment_color}"),
                     class_="card-body"
@@ -341,6 +373,15 @@ def server(input, output, session):
             articles_html.append(article_card)
         
         return ui.div(*articles_html)
+
+    @session.download(filename="data.xlsx")
+    def download_basic():
+        file_path = "data.xlsx"
+        
+        # Read the file and return its contents
+        with open(file_path, "rb") as f:
+            return f.read()
+
     
     @output
     @render.ui
