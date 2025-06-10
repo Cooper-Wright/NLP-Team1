@@ -52,9 +52,6 @@ def fetch_data(query, result_size=20):
     
     try:
         response = requests.post(API_URL, headers=headers, data=json.dumps(payload))
-<<<<<<< HEAD:frontend/dashboard_test.py
-        return response.json()
-=======
         json_response = response.json()
 
         while json_response.get("message") == "Endpoint request timed out":
@@ -63,7 +60,6 @@ def fetch_data(query, result_size=20):
         print(json_response)
         write_to_excel(json_response, payload)
         return json_response
->>>>>>> 361fdd72517171caf95ab028874b48155ffa9450:dashboard_test.py
     except Exception as e:
         return {"results": [], "error": str(e)}
     
@@ -192,7 +188,6 @@ def create_sentiment_plot(df):
 
 # UI Definition
 app_ui = ui.page_fluid(
-<<<<<<< HEAD:frontend/dashboard_test.py
     # Custom CSS for styling
     ui.include_css("style.css"),
 
@@ -203,15 +198,6 @@ app_ui = ui.page_fluid(
             ui.img(src="star.png", class_="star-icon"),
             "Seren",
             class_="navbar-brand"
-=======
-
-    ui.h1("Amplyfi News Dashboard", class_="text-center mb-4"),
-    
-    # Search Input
-    ui.row(
-        ui.column(8,
-            ui.input_text("search_query", "Search Query:", value="", placeholder="Enter the name of a product", width="100%")
->>>>>>> 361fdd72517171caf95ab028874b48155ffa9450:dashboard_test.py
         ),
         class_="navbar-custom"
     ),
