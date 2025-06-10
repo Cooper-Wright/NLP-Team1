@@ -44,7 +44,7 @@ def clean_text(text):
 def fetch_data(query, result_size):
     """Fetch data from Amplyfi API"""
     payload = {
-        "query_text": "What are the latest and most unbiased reviews or ratings or experiences on the " + query + ". Please ensure the articles are solely on the " + query + ".",
+        "query_text": "Articles with the words 'reviews' or 'rating' or 'experiences' " + query + " in the Title", #What are the latest and most unbiased reviews or ratings or experiences on the " + query + ". Please ensure the articles are solely on the " + query + ".
         "result_size": result_size,
         "include_highlights": True
     }
@@ -206,12 +206,6 @@ app_ui = ui.page_fluid(
     ui.row(
         # Left Column - WordCloud and Article List
         ui.column(6,
-            # WordCloud
-            ui.card(
-                ui.card_header("Word Cloud"),
-                ui.output_ui("wordcloud_output"),
-                height="350px"
-            ),
             ui.br(),
             # Article List
             ui.card(
@@ -249,6 +243,13 @@ app_ui = ui.page_fluid(
                 ui.card_header("Sentiment Analysis"),
                 ui.output_ui("sentiment_plot"),
                 height="780px"
+            ),
+
+            # WordCloud
+            ui.card(
+                ui.card_header("Word Cloud"),
+                ui.output_ui("wordcloud_output"),
+                height="500px"
             )
         )
     )
