@@ -73,6 +73,6 @@ def main():
         print("Attempt", i)
         json_response = get_response(API_URL, headers, payload)
 
-    write_to_excel(json_response)
+    write_to_excel(json_response, payload)
 
 main()
