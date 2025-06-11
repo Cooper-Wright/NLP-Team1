@@ -22,7 +22,7 @@ except LookupError:
 
 # API Configuration
 API_URL = "https://zfgp45ih7i.execute-api.eu-west-1.amazonaws.com/sandbox/api/search"
-API_KEY = "ZR38746G38B7RB46GBER"  # Use your actual API key from the hackathon
+API_KEY = "ZR38746G38B7RB46GBER"
 
 headers = {
     "Content-Type": "application/json",
@@ -38,17 +38,16 @@ def clean_text(text):
         return ""
     text = re.sub(r"http\S+|www\.\S+", "", text)
     text = text.lower()
-    text = re.sub(r"[^a-z\s]", " ", text)
+    text = re.sub(r"[^a-z\s.,!?;:'\"\(\)\[\]\{\}-]", " ", text)
     text = re.sub(r"\s+", " ", text).strip()
     return text
 
-def fetch_data(query, result_size=20):
+def fetch_data(query, result_size):
     """Fetch data from Amplyfi API"""
     payload = {
-        "query_text": "Articles with the words 'reviews' or 'rating' or 'experiences' " + query + " in the Title", #What are the latest and most unbiased reviews or ratings or experiences on the " + query + ". Please ensure the articles are solely on the " + query + ".
+        "query_text": "Articles with the words 'reviews' or 'rating' or 'experiences' and must have '" + query + "' in the Title", #What are the latest and most unbiased reviews or ratings or experiences on the " + query + ". Please ensure the articles are solely on the " + query + ".
         "result_size": result_size,
-        "include_highlights": True,
-        "ai_answer": "basic"
+        "include_highlights": True
     }
     
     try:
@@ -234,18 +233,18 @@ app_ui = ui.page_fixed(
                         ui.column(6,
                             # Add sorting dropdown here
                             ui.input_select(
-                                "sort_by",
-                                label=None,
-                                choices={
-                                    "sent_compound_desc": "Most Positive First",
-                                    "sent_compound_asc": "Most Negative First", 
-                                    "title": "Title (A-Z)",
-                                    "timestamp": "Date (if available)",
-                                    "score": "Relevance Score"
-                                },
-                                selected="sent_compound_desc",
-                                width="100%"
-                            ),
+                            "sort_by", 
+                            "Sort Articles By:", 
+                            {
+                                "score": "Relevance Score",
+                                "sent_compound_desc": "Most Positive First",
+                                "sent_compound_asc": "Most Negative First", 
+                                "title": "Title (A-Z)",
+                                "timestamp": "Date (if available)"
+                            },
+                            selected="score",
+                            width="100%"
+                        ),
                         ),
                         class_="section-header"
                     ),
@@ -367,7 +366,7 @@ def server(input, output, session):
         
         articles_html = []
         for idx, article in sorted_df.iterrows():
-            sentiment_color = "success" if article['sent_compound'] > 0.1 else "danger" if article['sent_compound'] < -0.1 else "warning"
+            sentiment_color = "success" if article['sent_compound'] > 0.4 else "danger" if article['sent_compound'] < -0.4 else "secondary"
             
             # Get the title and truncate if needed
             title_text = article.get('title', 'No Title')
@@ -388,17 +387,26 @@ def server(input, output, session):
                 title_element = ui.tags.a(
                     title_display, 
                     href=article_url,
-                    target="_blank",
+                    target="_blank",  # Open in new tab
                     style="color: #2c3e50; text-decoration: none; font-weight: 600; font-size: 1.1rem;"
                 )
             else:
                 title_element = ui.h6(title_display)
                 
+            review = ""
+
+            if article['sent_compound'] > 0.4:
+                review = "Good"
+            elif article['sent_compound'] < -0.4:
+                review = "Bad"
+            else:
+                review = "Neutral"
+            
             article_card = ui.div(
                 ui.div(
-                    title_element,
-                    ui.p(article.get('summary', 'No Summary')[:200] + "..." if len(str(article.get('summary', ''))) > 200 else article.get('summary', 'No Summary')),
-                    ui.span(f"Sentiment: {article['sent_compound']:.3f}", class_=f"badge bg-{sentiment_color}"),
+                    title_element,  # Use the dynamic title element
+                    ui.p(article.get('summary', 'No Summary')[:200] + "..." if len(str(article.get('summary', ''))) > 200 else article.get('summary', 'No Summary')),    
+                    ui.span(f"Opinion: {review}", class_=f"badge bg-{sentiment_color}"),
                     class_="card-body"
                 ),
                 class_="card mb-3"
@@ -406,7 +414,7 @@ def server(input, output, session):
             articles_html.append(article_card)
         
         return ui.div(*articles_html)
-
+    
     @render.download(filename="data.xlsx")
     def download_basic():
         file_path = "data.xlsx"
