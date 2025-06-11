@@ -146,7 +146,7 @@ def generate_wordcloud(text_data):
     return [f"data:image/png;base64,{img_b64}", wordcloud.words_.keys()]
 
 def create_sentiment_plot(df):
-    """Create sentiment over time plot"""
+    """Create sentiment scatter plot over time"""
     if df.empty:
         return go.Figure()
     
@@ -162,14 +162,23 @@ def create_sentiment_plot(df):
     
     fig = go.Figure()
     
-    # Add sentiment line
+    # Add sentiment scatter plot (no lines, only markers)
     fig.add_trace(go.Scatter(
         x=x_axis,
         y=df_sorted['sent_compound'],
-        mode='lines+markers',
+        mode='markers',  # Only markers for pure scatter plot
         name='Sentiment Score',
-        line=dict(color='#2E86AB', width=3),
-        marker=dict(size=6)
+        marker=dict(
+            size=12,
+            color=df_sorted['sent_compound'],  # Color points by sentiment value
+            colorscale='RdYlGn',  # Red (negative) to Yellow (neutral) to Green (positive)
+            colorbar=dict(title="Sentiment"),
+            showscale=True,
+            line=dict(width=1, color='DarkSlateGrey')
+        ),
+        text=df_sorted['title'] if 'title' in df_sorted.columns else None,
+        hovertemplate='<b>%{text}</b><br>Sentiment: %{y:.2f}<extra></extra>' if 'title' in df_sorted.columns 
+                    else 'Sentiment: %{y:.2f}<extra></extra>'
     ))
     
     # Add neutral line
@@ -180,7 +189,34 @@ def create_sentiment_plot(df):
         xaxis_title=x_title,
         yaxis_title="Sentiment Score",
         height=400,
-        showlegend=False,
+        template="plotly_white"
+    )
+    
+    return fig
+
+def create_sentiment_pie(df):
+    """Create pie chart showing distribution of sentiment categories"""
+    if df.empty:
+        return go.Figure()
+    
+    # Categorize sentiments
+    sentiment_categories = {
+        "Positive": (df['sent_compound'] > 0.4).sum(),
+        "Neutral": ((df['sent_compound'] >= -0.4) & (df['sent_compound'] <= 0.4)).sum(),
+        "Negative": (df['sent_compound'] < -0.4).sum()
+    }
+    
+    # Create pie chart
+    fig = go.Figure(data=[go.Pie(
+        labels=list(sentiment_categories.keys()),
+        values=list(sentiment_categories.values()),
+        hole=.3,  # Donut chart style
+        marker_colors=['#28a745', '#6c757d', '#dc3545']  # Green, Gray, Red
+    )])
+    
+    fig.update_layout(
+        title="Sentiment Distribution",
+        height=400,
         template="plotly_white"
     )
     
@@ -208,8 +244,8 @@ app_ui = ui.page_fixed(
                 ui.input_text(
                     "search_query", 
                     None,
-                    value="nintendo switch 2",
-                    placeholder="What are you looking at today?",
+                    value="",
+                    placeholder="Enter the name of a product...",
                     width="100%"
                 ),
                 ui.input_action_button("search_btn", "🔍", class_="search-btn"),
@@ -265,7 +301,11 @@ app_ui = ui.page_fixed(
             # Right Column - Sentiment Graph
             ui.column(6,
                 ui.card(
-                    ui.card_header("Sentiment Analysis"),
+                    ui.row(
+                        ui.column(8, ui.card_header("Sentiment Analysis")),
+                        ui.column(4, ui.input_switch("show_pie", "Show Pie Chart", value=False)),
+                        class_="d-flex align-items-center"
+                    ),
                     ui.output_ui("sentiment_plot"),
                     class_="sentiment-analysis",
                     height="36vh"
@@ -302,7 +342,7 @@ def server(input, output, session):
         ui.notification_show(f"Searching for '{query}'...", type="message")
         
         # Fetch data
-        json_response = fetch_data(query, result_size=15)
+        json_response = fetch_data(query, result_size=100)
         
         if "error" in json_response:
             ui.notification_show(f"Error: {json_response['error']}", type="error")
@@ -427,12 +467,16 @@ def server(input, output, session):
     @output
     @render.ui
     def sentiment_plot():
-        """Render sentiment plot"""
+        """Render sentiment plot based on selected view type"""
         df = current_data()
         if df.empty:
             return ui.div("Search for articles to see sentiment analysis", class_="text-center mt-5")
         
-        fig = create_sentiment_plot(df)
+        # Determine which visualization to show based on switch
+        if input.show_pie():
+            fig = create_sentiment_pie(df)
+        else:
+            fig = create_sentiment_plot(df)
         
         # Convert plotly figure to HTML
         plot_html = fig.to_html(include_plotlyjs='cdn', div_id="sentiment-plot")
