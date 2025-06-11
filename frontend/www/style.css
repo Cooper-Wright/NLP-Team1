@@ -140,3 +140,13 @@
 #toggle_wordcloud:hover {
     background-color: #F48668;
 }
+
+#toggle_sentiment {
+    color: #000;
+    background-color: #F4A698;
+    border: none;
+}
+
+#toggle_sentiment:hover {
+    background-color: #F48668;
+}

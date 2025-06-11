@@ -319,13 +319,12 @@ app_ui = ui.page_fixed(
                     ),
                     ui.output_ui("sentiment_plot"),
                     class_="sentiment-analysis",
-                    height="61vh"
+                    height="60vh"
                 ),
 
                 ui.card(
-                    ui.card_header(
                         ui.row(
-                            ui.column(8, "Word Cloud"),
+                            ui.column(8, ui.card_header("Word Cloud")),
                             ui.column(4, 
                                 ui.input_action_button(
                                     "toggle_wordcloud", 
@@ -333,12 +332,12 @@ app_ui = ui.page_fixed(
                                     class_="btn btn-outline-primary btn-sm float-end",
                                     style="margin-top: -5px;"
                                 )
-                            )
-                        )
-                    ),
+                            ),
+                            class_="d-flex align-items-center"
+                        ),
                     ui.output_ui("wordcloud_output"),
                     class_="word_cloud", 
-                     height="49vh"
+                     height="48vh"
                 )
             ),
             class_="analytics"
@@ -551,7 +550,6 @@ def server(input, output, session):
         # Read the file and return its contents
         with open(file_path, "rb") as f:
             return f.read()
-
     
     @output
     @render.ui
