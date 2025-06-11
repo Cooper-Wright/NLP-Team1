@@ -209,7 +209,7 @@ app_ui = ui.page_fixed(
                 ui.input_text(
                     "search_query", 
                     None,
-                    value="nintendo switch 2",
+                    value="",
                     placeholder="What are you looking at today?",
                     width="100%"
                 ),
