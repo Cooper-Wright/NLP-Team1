@@ -106,27 +106,18 @@
 
 .bg-success {
   --bslib-color-bg: #73A580;
-  --bslib-color-fg: #fff;
+  background-color: #73A580 !important;
+  color: #000 !important;
 }
 
 .bg-warning {
   --bslib-color-bg: darkgrey;
-  --bslib-color-fg: #000;
+  background-color: darkgrey !important;
+  color: #000 !important;
 }
 
 .bg-danger {
   --bslib-color-bg: #DD614A;
-  --bslib-color-fg: #000;
-}
-
-.sentiment-analysis {
-    height: 30vh;
-}
-
-.word-cloud {
-    height: 30vh;
-}
-
-.articles-list {
-    height: 60vh;
+  background-color: #DD614A !important;
+  color: #000 !important;
 }
