@@ -17,8 +17,9 @@
     max-width: 100%;
 }
 
-.h1 {
+.card-header {
     font-family: 'Montserrat', 'sans-serif';
+    font-size: 2rem;
 }
 
 .navbar-custom {
@@ -120,4 +121,22 @@
   --bslib-color-bg: #DD614A;
   background-color: #DD614A !important;
   color: #000 !important;
+}
+.analytics {
+    height: 50%;
+}
+
+#sentiment-plot {
+    height: 100%;
+    width: auto;
+}
+
+#toggle_wordcloud {
+    color: #000;
+    background-color: #F4A698;
+    border: none;
+}
+
+#toggle_wordcloud:hover {
+    background-color: #F48668;
 }
