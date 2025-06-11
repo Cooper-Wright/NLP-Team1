@@ -46,7 +46,7 @@ def clean_text(text):
 def fetch_data(query, result_size):
     """Fetch data from Amplyfi API"""
     payload = {
-        "query_text": "Articles with the words 'reviews' or 'rating' or 'experiences' and must have '" + query + "' in the Title", #What are the latest and most unbiased reviews or ratings or experiences on the " + query + ". Please ensure the articles are solely on the " + query + ".
+        "query_text": "Articles with the words 'reviews' or 'rating' or 'experiences' and must have a product by the name '" + query + "' in the Title", #What are the latest and most unbiased reviews or ratings or experiences on the " + query + ". Please ensure the articles are solely on the " + query + ".
         "result_size": result_size,
         "include_highlights": True
     }
