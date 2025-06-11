@@ -167,12 +167,12 @@ def create_sentiment_plot(df):
     fig.add_trace(go.Scatter(
         x=x_axis,
         y=df_sorted['sent_compound'],
-        mode='markers',  # Only markers for pure scatter plot
+        mode='markers',
         name='Sentiment Score',
         marker=dict(
             size=12,
-            color=df_sorted['sent_compound'],  # Color points by sentiment value
-            colorscale='RdYlGn',  # Red (negative) to Yellow (neutral) to Green (positive)
+            color=df_sorted['sent_compound'],  
+            colorscale='RdYlGn',
             colorbar=dict(title="Sentiment"),
             showscale=True,
             line=dict(width=1, color='DarkSlateGrey')
@@ -186,11 +186,11 @@ def create_sentiment_plot(df):
     fig.add_hline(y=0, line_dash="dash", line_color="gray", opacity=0.5)
     
     fig.update_layout(
-        title="Sentiment Analysis Over Time",
+        title="Sentiment Analysis",
         xaxis_title=x_title,
         yaxis_title="Sentiment Score",
-        height=380,  # Reduced height to fit better
-        margin=dict(l=50, r=50, t=50, b=30),  # Tighter margins
+        height=380,
+        margin=dict(l=50, r=50, t=50, b=30),
         template="plotly_white",
         autosize=True
     )
