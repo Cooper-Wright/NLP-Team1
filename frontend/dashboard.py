@@ -189,8 +189,10 @@ def create_sentiment_plot(df):
         title="Sentiment Analysis Over Time",
         xaxis_title=x_title,
         yaxis_title="Sentiment Score",
-        height=400,
-        template="plotly_white"
+        height=380,  # Reduced height to fit better
+        margin=dict(l=50, r=50, t=50, b=30),  # Tighter margins
+        template="plotly_white",
+        autosize=True
     )
     
     return fig
@@ -287,7 +289,7 @@ app_ui = ui.page_fixed(
                     ),
                     ui.div(
                         ui.output_ui("articles_list"),
-                        style="height: 60vh; overflow-y: auto;"
+                        style="height: 98.5vh; overflow-y: auto;"
                     ),
 
                     ui.download_button(
@@ -305,12 +307,19 @@ app_ui = ui.page_fixed(
                 ui.card(
                     ui.row(
                         ui.column(8, ui.card_header("Sentiment Analysis")),
-                        ui.column(4, ui.input_switch("show_pie", "Show Pie Chart", value=False)),
+                        ui.column(4, 
+                            ui.input_action_button(
+                                "toggle_sentiment", 
+                                "Scatter View", 
+                                class_="btn btn-outline-primary btn-sm float-end",
+                                style="margin-top: -5px;"
+                            )
+                        ),
                         class_="d-flex align-items-center"
                     ),
                     ui.output_ui("sentiment_plot"),
                     class_="sentiment-analysis",
-                    height="41vh"
+                    height="61vh"
                 ),
 
                 ui.card(
@@ -329,7 +338,7 @@ app_ui = ui.page_fixed(
                     ),
                     ui.output_ui("wordcloud_output"),
                     class_="word_cloud", 
-                     height="29vh"
+                     height="49vh"
                 )
             ),
             class_="analytics"
@@ -345,7 +354,9 @@ def server(input, output, session):
     current_data = reactive.Value(pd.DataFrame())
     # Toggle state for word cloud view
     show_wordcloud = reactive.Value(True)
-    
+    # Toggle state for sentiment view
+    show_pie_chart = reactive.Value(True)
+
     @reactive.Effect
     @reactive.event(input.toggle_wordcloud)
     def toggle_view():
@@ -359,6 +370,19 @@ def server(input, output, session):
         else:
             ui.update_action_button("toggle_wordcloud", label="Cloud View")
     
+    @reactive.Effect
+    @reactive.event(input.toggle_sentiment)
+    def toggle_sentiment_view():
+        """Toggle between pie chart and scatter plot view"""
+        current_state = show_pie_chart()
+        show_pie_chart.set(not current_state)
+        
+        # Update button text based on current view
+        if show_pie_chart():
+            ui.update_action_button("toggle_sentiment", label="Scatter View")
+        else:
+            ui.update_action_button("toggle_sentiment", label="Pie View")
+
     @reactive.Effect
     @reactive.event(input.search_btn, ignore_none=False)
     def fetch_and_process_data():
@@ -531,14 +555,15 @@ def server(input, output, session):
     
     @output
     @render.ui
+    # @reactive.event(current_data)
     def sentiment_plot():
         """Render sentiment plot based on selected view type"""
         df = current_data()
         if df.empty:
             return ui.div("Search for articles to see sentiment analysis", class_="text-center mt-5")
         
-        # Determine which visualization to show based on switch
-        if input.show_pie():
+        # Use the reactive value instead of the input switch
+        if show_pie_chart():
             fig = create_sentiment_pie(df)
         else:
             fig = create_sentiment_plot(df)
