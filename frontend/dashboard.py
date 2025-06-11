@@ -13,6 +13,7 @@ import base64
 from datetime import datetime, timedelta
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+from collections import Counter
 
 # Download VADER lexicon if not already downloaded
 try:
@@ -112,7 +113,7 @@ def find_sentimental_value(json_response):
 
     return df
 
-def generate_wordcloud(text_data):
+def generate_wordcloud(text_data, exclude_words=None):
     """Generate word cloud from text data"""
     if not text_data:
         return None
@@ -125,11 +126,11 @@ def generate_wordcloud(text_data):
     
     # Generate word cloud
     wordcloud = WordCloud(
-        width=700,
-        height=300, 
+        width=650,
+        height=150, 
         background_color='white',
         colormap='plasma',
-        max_words=50
+        max_words=50,
     ).generate(combined_text)
     
     # Convert to base64 for display
@@ -270,8 +271,8 @@ app_ui = ui.page_fixed(
                             # Add sorting dropdown here
                             ui.input_select(
                             "sort_by", 
-                            "Sort Articles By:", 
-                            {
+                            label=None, 
+                            choices={
                                 "score": "Relevance Score",
                                 "sent_compound_desc": "Most Positive First",
                                 "sent_compound_asc": "Most Negative First", 
@@ -286,7 +287,7 @@ app_ui = ui.page_fixed(
                     ),
                     ui.div(
                         ui.output_ui("articles_list"),
-                        style="height: 50vh; overflow-y: auto;"
+                        style="height: 60vh; overflow-y: auto;"
                     ),
 
                     ui.download_button(
@@ -298,8 +299,9 @@ app_ui = ui.page_fixed(
                 class_="articles-list"
             ),
             
-            # Right Column - Sentiment Graph
-            ui.column(6,
+        ui.column(6,
+            ui.card(
+                ui.h1("Analytics Dashboard"),
                 ui.card(
                     ui.row(
                         ui.column(8, ui.card_header("Sentiment Analysis")),
@@ -308,19 +310,31 @@ app_ui = ui.page_fixed(
                     ),
                     ui.output_ui("sentiment_plot"),
                     class_="sentiment-analysis",
-                    height="36vh"
+                    height="41vh"
                 ),
 
-                # WordCloud
                 ui.card(
-                    ui.card_header("Word Cloud"),
+                    ui.card_header(
+                        ui.row(
+                            ui.column(8, "Word Cloud"),
+                            ui.column(4, 
+                                ui.input_action_button(
+                                    "toggle_wordcloud", 
+                                    "List View", 
+                                    class_="btn btn-outline-primary btn-sm float-end",
+                                    style="margin-top: -5px;"
+                                )
+                            )
+                        )
+                    ),
                     ui.output_ui("wordcloud_output"),
-                    class_="word_cloud",
-                    height="36vh"
-                    
+                    class_="word_cloud", 
+                     height="29vh"
                 )
             ),
+            class_="analytics"
         ),
+    ),
 
 )
 
@@ -329,6 +343,21 @@ def server(input, output, session):
     
     # Reactive data storage
     current_data = reactive.Value(pd.DataFrame())
+    # Toggle state for word cloud view
+    show_wordcloud = reactive.Value(True)
+    
+    @reactive.Effect
+    @reactive.event(input.toggle_wordcloud)
+    def toggle_view():
+        """Toggle between word cloud and list view"""
+        current_state = show_wordcloud()
+        show_wordcloud.set(not current_state)
+        
+        # Update button text based on current view
+        if show_wordcloud():
+            ui.update_action_button("toggle_wordcloud", label="List View")
+        else:
+            ui.update_action_button("toggle_wordcloud", label="Cloud View")
     
     @reactive.Effect
     @reactive.event(input.search_btn, ignore_none=False)
@@ -362,21 +391,57 @@ def server(input, output, session):
     @output
     @render.ui
     def wordcloud_output():
-        """Render word cloud"""
+        """Render word cloud or word list based on toggle state"""
         df = current_data()
         if df.empty:
             return ui.div("Search for articles to generate word cloud", class_="text-center mt-5")
         
+        # Extract words to exclude from the search query
+        query = input.search_query()
+        exclude_words = []
+        if query:
+            # Split query into individual words and clean them
+            query_words = re.split(r'[^\w]+', query.lower())
+            exclude_words = [word.strip() for word in query_words if word.strip()]
+        
         # Generate word cloud from clean summaries
         clean_texts = df['clean_summary'].tolist()
-        wordcloud = generate_wordcloud(clean_texts)
-        wordcloud_img = wordcloud[0]
-        wordcloud_list = wordcloud[1]
+        wordcloud_data = generate_wordcloud(clean_texts, exclude_words=exclude_words)
         
-        if wordcloud_img:
-            return ui.img(src=wordcloud_img, style="height: 100%;")
-        else:
+        if not wordcloud_data or not wordcloud_data[0]:
             return ui.div("No text data available for word cloud", class_="text-center mt-5")
+        
+        if show_wordcloud():
+            # Show word cloud
+            return ui.img(src=wordcloud_data[0], style="height: 100%;")
+        else:
+            # Show top words list using the already sorted words from wordcloud
+            wordcloud_words = list(wordcloud_data[1])[:15]  # Take top 15 words
+            
+            if not wordcloud_words:
+                return ui.div("No words available", class_="text-center mt-5")
+            
+            # Create a styled list of top words
+            word_items = []
+            for i, word in enumerate(wordcloud_words, 1):
+                word_item = ui.div(
+                    ui.div(
+                        ui.span(f"{i}.", class_="text-muted me-2"),
+                        ui.span(word.title(), class_="fw-bold"),
+                        class_="d-flex align-items-center"
+                    ),
+                    class_="list-group-item border-0 py-1"
+                )
+                word_items.append(word_item)
+            
+            return ui.div(
+                ui.div(
+                    *word_items,
+                    class_="list-group list-group-flush",
+                    style="height: 100%; overflow-y: auto; padding: 0 10px;"
+                ),
+                style="height: 100%;"
+            )
     
     @output
     @render.ui
