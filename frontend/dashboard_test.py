@@ -1,3 +1,4 @@
+from pathlib import Path
 from shiny import App, render, ui, reactive
 import requests
 import json
@@ -187,11 +188,10 @@ def create_sentiment_plot(df):
     return fig
 
 # UI Definition
-app_ui = ui.page_fluid(
+app_ui = ui.page_fixed(
     # Custom CSS for styling
-    ui.include_css("style.css"),
+    ui.tags.link(href="style.css", rel="stylesheet"),
 
-    
     # Navigation Bar
     ui.div(
         ui.div(
@@ -209,7 +209,7 @@ app_ui = ui.page_fluid(
                 ui.input_text(
                     "search_query", 
                     None,
-                    value="artificial intelligence",
+                    value="nintendo switch 2",
                     placeholder="What are you looking at today?",
                     width="100%"
                 ),
@@ -225,53 +225,63 @@ app_ui = ui.page_fluid(
     ui.row(
         # Left Column - WordCloud and Article List
         ui.column(6,
-            ui.br(),
             # Article List
-            ui.card(
-                ui.card_header("Top Articles"),
-                # Add sorting dropdown here
-                ui.input_select(
-                    "sort_by", 
-                    "Sort Articles By:", 
-                    {
-                        "sent_compound_desc": "Most Positive First",
-                        "sent_compound_asc": "Most Negative First", 
-                        "title": "Title (A-Z)",
-                        "timestamp": "Date (if available)",
-                        "score": "Relevance Score"
-                    },
-                    selected="sent_compound_desc",
-                    width="100%"
+                ui.card(
+                    ui.row(
+                        ui.column(6,
+                            ui.h1("Product Articles"),
+                        ),
+                        ui.column(6,
+                            # Add sorting dropdown here
+                            ui.input_select(
+                                "sort_by",
+                                label=None,
+                                choices={
+                                    "sent_compound_desc": "Most Positive First",
+                                    "sent_compound_asc": "Most Negative First", 
+                                    "title": "Title (A-Z)",
+                                    "timestamp": "Date (if available)",
+                                    "score": "Relevance Score"
+                                },
+                                selected="sent_compound_desc",
+                                width="100%"
+                            ),
+                        ),
+                        class_="section-header"
+                    ),
+                    ui.div(
+                        ui.output_ui("articles_list"),
+                        style="height: 400px; overflow-y: auto;"
+                    ),
+
+                    ui.download_button(
+                    "download_basic", 
+                    "Full Excel Download", 
+                    class_="btn btn-success"
+                    )
                 ),
-                ui.div(
-                    ui.output_ui("articles_list"),
-                    style="height: 400px; overflow-y: auto;"
+                class_="articles-list"
+            ),
+            
+            # Right Column - Sentiment Graph
+            ui.column(6,
+                ui.card(
+                    ui.card_header("Sentiment Analysis"),
+                    ui.output_ui("sentiment_plot"),
+                    height="780px",
+                    class_="sentiment-analysis"
                 ),
 
-                ui.download_button(
-                "download_basic", 
-                "Full Excel Download", 
-                class_="btn btn-success"
+                # WordCloud
+                ui.card(
+                    ui.card_header("Word Cloud"),
+                    ui.output_ui("wordcloud_output"),
+                    height="500px",
+                    class_="word_cloud"
                 )
             )
         ),
-        
-        # Right Column - Sentiment Graph
-        ui.column(6,
-            ui.card(
-                ui.card_header("Sentiment Analysis"),
-                ui.output_ui("sentiment_plot"),
-                height="780px"
-            ),
 
-            # WordCloud
-            ui.card(
-                ui.card_header("Word Cloud"),
-                ui.output_ui("wordcloud_output"),
-                height="500px"
-            )
-        )
-    )
 )
 
 # Server Logic
@@ -375,7 +385,7 @@ def server(input, output, session):
                 title_element = ui.tags.a(
                     title_display, 
                     href=article_url,
-                    target="_blank",  # Open in new tab
+                    target="_blank",
                     style="color: #2c3e50; text-decoration: none; font-weight: 600; font-size: 1.1rem;"
                 )
             else:
@@ -383,7 +393,7 @@ def server(input, output, session):
                 
             article_card = ui.div(
                 ui.div(
-                    title_element,  # Use the dynamic title element
+                    title_element,
                     ui.p(article.get('summary', 'No Summary')[:200] + "..." if len(str(article.get('summary', ''))) > 200 else article.get('summary', 'No Summary')),
                     ui.span(f"Sentiment: {article['sent_compound']:.3f}", class_=f"badge bg-{sentiment_color}"),
                     class_="card-body"
@@ -394,7 +404,7 @@ def server(input, output, session):
         
         return ui.div(*articles_html)
 
-    @session.download(filename="data.xlsx")
+    @render.download(filename="data.xlsx")
     def download_basic():
         file_path = "data.xlsx"
         
@@ -418,7 +428,8 @@ def server(input, output, session):
         return ui.HTML(plot_html)
 
 # Create the app
-app = App(app_ui, server)
+app_dir = Path(__file__).parent
+app = App(app_ui, server, static_assets=app_dir / "www")
 
 if __name__ == "__main__":
     app.run()
